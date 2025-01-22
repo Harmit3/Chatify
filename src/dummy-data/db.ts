@@ -18,7 +18,7 @@ export const conversations = [
 	{
 		_id: "2",
 		admin: null,
-		groupImage: "https://avatars.githubusercontent.com/u/75279146?v=4",
+		groupImage: null,
 		groupName: null,
 		participants: ["user4", "user5"],
 		_creationTime: 1638235872, // Unix timestamp for 2021-11-30 13:04:32 UTC
