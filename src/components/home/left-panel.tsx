@@ -1,4 +1,4 @@
-"user client";
+"use client";
 import { ListFilter,Search} from "lucide-react";
 import { Input } from "../ui/input";
 import ThemeSwitch from "./theme-switch";
