@@ -1,5 +1,5 @@
 import { ConvexError,v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 
 export const sentTextMessage =mutation({
     args:{
@@ -44,3 +44,85 @@ export const sentTextMessage =mutation({
         
     },
 });
+
+// export const getMessages=query({
+
+//     args:{
+//         conversation:v.id("conversations"),
+//     },
+//     handler:async(ctx,args)=>{
+//         const identity=await ctx.auth.getUserIdentity();
+//         if(!identity){
+//             throw new ConvexError("Not Auuthenticated!!");
+//         }
+
+//         const  messages=await ctx.db
+//         .query("messages")
+//         .withIndex('by_conversation',q=>q.eq("conversation",args.conversation))
+//         .collect();
+
+
+       {/*this is unoptimized since if any user sent 200 messages then it will run by 200 times while 
+       we need only once so we need to use hashMap for that which has key and pair value concept*/}
+
+//         const messagesWithSender=await Promise.all(
+//             messages.map(async(message)=>{
+//                 const sender=await ctx.db
+//                 .query("users")
+//                 .filter(q=>q.eq(q.field("_id"),message.sender))
+//                 .first();
+
+//                 return {...message,sender}
+//             })
+            
+//         )
+//         return messagesWithSender;
+//     }
+// });
+
+
+
+
+
+//optimized version with hashmap
+
+ export const getMessages=query({
+
+        args:{
+            conversation:v.id("conversations"),
+        },
+        handler:async(ctx,args)=>{
+            const identity=await ctx.auth.getUserIdentity();
+            if(!identity){
+                throw new ConvexError("Not Auuthenticated!!");
+            }
+    
+            const  messages=await ctx.db
+            .query("messages")
+            .withIndex('by_conversation',q=>q.eq("conversation",args.conversation))
+            .collect();
+
+            const userProfileCache=new Map();
+
+            const messagesWithSender=await Promise.all(
+                messages.map(async(message)=>{
+                    let sender;
+                    //check if sender is in cache profile
+                    if(userProfileCache.has(message.sender)){
+                        sender=userProfileCache.get(message.sender);
+                    }else{
+                        //fetch sender profile from  the database
+                        sender=await ctx.db
+                          .query("users")
+                          .filter((q)=>q.eq(q.field("_id"),message.sender))
+                          .first();
+                     //cavhe the render profile
+                     userProfileCache.set(message.sender,sender);
+                    }
+                    return {...message,sender};
+                })
+            );
+         return messagesWithSender;
+
+        },
+})
