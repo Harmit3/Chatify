@@ -6,11 +6,12 @@ type ChatBubbleAvatarProps={
     message:IMessage;
     isMember:boolean;
     isGroup:boolean | undefined ;
+    fromAI:boolean;
 };
 
 
-const ChatBubbleAvatar=({isGroup,isMember,message}:ChatBubbleAvatarProps)=> {
-    if(!isGroup) return null;
+const ChatBubbleAvatar=({isGroup,isMember,message,fromAI}:ChatBubbleAvatarProps)=> {
+    if(!isGroup && !fromAI) return null;
   return (
     <Avatar className='overflow-visible relative'>
         {message.sender.isOnline && isMember && (
@@ -22,7 +23,7 @@ const ChatBubbleAvatar=({isGroup,isMember,message}:ChatBubbleAvatarProps)=> {
             <div className='animate-pulse bg-gray-tertiary rounded-full'></div>
         </AvatarFallback>
     </Avatar>
-  )
-}
+  );
+};
 
 export default ChatBubbleAvatar;

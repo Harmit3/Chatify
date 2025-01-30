@@ -1,5 +1,7 @@
 import { ConvexError,v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { scheduler } from "timers/promises";
+import { api } from "./_generated/api";
 
 export const sentTextMessage =mutation({
     args:{
@@ -41,9 +43,33 @@ export const sentTextMessage =mutation({
             messageType:"text",
         });
 
-        
+        //OPENAI API's chat
+        if(args.content.startsWith("@gpt")){
+            //schedule the chatr action immdediatly
+            await ctx.scheduler.runAfter(0,api.openai.chat,{
+               messageBody:args.content,
+               conversation:args.conversation,
+            });
+        }
     },
 });
+
+export const sendChatGPTMessage=mutation({
+    args:{
+        content:v.string(),
+        conversation:v.id("conversations"),
+        messageType: v.union(v.literal("text"), v.literal("image")),
+    },
+    handler:async(ctx,args)=>{
+         await ctx.db.insert("messages",{
+            content:args.content,
+            sender:"ChatGPT",
+            messageType:args.messageType,
+            conversation:args.conversation,
+        });
+
+    },
+})
 
 // export const getMessages=query({
 
@@ -106,6 +132,10 @@ export const sentTextMessage =mutation({
 
             const messagesWithSender=await Promise.all(
                 messages.map(async(message)=>{
+                    if(message.sender==="ChatGpt"){
+                        return{...message,sender:{name:"ChatGPT",image:"/gpt.png"},
+                    }
+                    }
                     let sender;
                     //check if sender is in cache profile
                     if(userProfileCache.has(message.sender)){
@@ -116,7 +146,7 @@ export const sentTextMessage =mutation({
                           .query("users")
                           .filter((q)=>q.eq(q.field("_id"),message.sender))
                           .first();
-                     //cavhe the render profile
+                     //caChe the render profile
                      userProfileCache.set(message.sender,sender);
                     }
                     return {...message,sender};
