@@ -5,7 +5,8 @@ import { hostname } from 'os';
 const nextConfig= {
   images:{
     remotePatterns:[
-      {hostname:"confident-monitor-488.convex.cloud"}
+      {hostname:"confident-monitor-488.convex.cloud"},
+   
     ]
   }
 };

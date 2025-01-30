@@ -1,4 +1,4 @@
-import { OpenAI } from 'openai';
+import OpenAI  from 'openai';
 import { action } from './_generated/server';
 import { v } from 'convex/values';
 import { Messages } from 'openai/resources/beta/threads/messages.mjs';
@@ -43,3 +43,26 @@ export const chat=action({
 
     },
 );
+
+
+export const dall_e = action({
+	args: {
+		conversation: v.id("conversations"),
+		messageBody: v.string(),
+	},
+	handler: async (ctx, args) => {
+		const res = await openai.images.generate({
+			model: "dall-e-2",
+			prompt: args.messageBody,
+			n: 1,
+			size: "1024x1024",
+		});
+
+		const imageUrl = res.data[0].url;
+		await ctx.runMutation(api.messages.sendChatGPTMessage, {
+			content: imageUrl ?? "/poopenai.png",
+			conversation: args.conversation,
+			messageType: "image",
+		});
+	},
+});

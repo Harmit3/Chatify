@@ -51,6 +51,15 @@ export const sentTextMessage =mutation({
                conversation:args.conversation,
             });
         }
+
+        //DALL-E chat
+        if(args.content.startsWith("@dall-e")){
+            //schedule the chatr action immdediatly
+            await ctx.scheduler.runAfter(0,api.openai.dall_e,{
+               messageBody:args.content,
+               conversation:args.conversation,
+            });
+        }
     },
 });
 
@@ -133,7 +142,8 @@ export const sendChatGPTMessage=mutation({
             const messagesWithSender=await Promise.all(
                 messages.map(async(message)=>{
                     if(message.sender==="ChatGpt"){
-                        return{...message,sender:{name:"ChatGPT",image:"/gpt.png"},
+                        const image=message.messageType==="text"?"/gpt.png":"dall-e.png"
+                        return{...message,sender:{name:"ChatGPT",image},
                     }
                     }
                     let sender;
