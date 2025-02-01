@@ -46,5 +46,15 @@ export interface IMessage{
     };
 }
 
+export interface ChatUser {
+    _id: Id<"users">;
+    image: string;
+    name?: string;
+    tokenIdentifier: string;
+    email: string;
+    _creationTime: number;
+    isOnline: boolean;
+}
+  
 
 

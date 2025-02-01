@@ -1,36 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ChatiFly - AI Powered Chatting Application 🚀
 
-## Getting Started
+Make chat a little bit more exciting by integrating AI capabilities with **GPT** and **DALL-E-3**! With **ChatiFly**, enjoy AI-powered conversations, multimedia creation, and an enhanced user experience.
 
-First, run the development server:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ⭐ About
+ChatiFly is a next-gen messaging app that makes chatting **smarter and more fun**! With built-in **AI capabilities**, it allows users to:  
+✅ Have AI-powered conversations  
+✅ Generate **AI-created** images & media  
+✅ Enjoy **seamless video calling**  
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🔥 Tech Stack
 
-## Learn More
+- **Convex** → Database, real-time events, and cloud functions  
+- **Next.js App Router** → Modern React framework  
+- **ShadCN** → Beautiful UI components  
+- **Convex File Storage** → Store images and videos securely  
+- **ZegoCloud** → High-quality video calls  
+- **Clerk** → Seamless user authentication  
+- **Tailwind CSS** → Styling made easy  
+- **TypeScript** → Maintainable and scalable code  
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🚀 Deploy Your Own
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Want to run ChatiFly yourself? Follow these steps:
 
-## Deploy on Vercel
+### 1. Install Dependencies
+   ```bash
+   npm install
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 2. Run the Development Server
+   ```bash
+   npm run dev
+   ```
+   This will prompt you to log into Convex and create a project.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 3. Set Up Clerk Authentication
+   - Sign up at [Clerk](https://clerk.dev).
+   - Copy `CLERK_SECRET_KEY` and `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` into `.env.local`.
+   - Retrieve the Issuer URL (should look like `https://some-animal-123.clerk.accounts.dev`).
+   - Add `CLERK_ISSUER_URL` and `CLERK_HOST_NAME` to your Convex environment variables.
+
+### 4. Configure Webhooks
+   - Go to your Clerk account’s WebHooks section.
+   - Add an endpoint:
+     ```
+     https://your-convex-url.convex.site/clerk
+     ```
+   - Enable events: `user.created`, `user.updated`, `session.created`, `session.ended`.
+   - Copy the webhook secret and add it as `CLERK_WEBHOOK_SECRET` in Convex Dashboard.
+
+### 5. Enable AI-Powered Features
+   - Create an account on [OpenAI](https://platform.openai.com).
+   - Copy your `OPENAI_API_KEY` and add it to your Convex Dashboard.
+
+### 6. Enable Video Calls
+   - Sign up at [ZEGOCLOUD](https://www.zegocloud.com).
+   - Create a project (select **Voice & Video Calls**).
+   - Add `ZEGO_APP_ID` and `ZEGO_SERVER_SECRET` to `.env.local`.
+
+---
+
+## ✅ Ready to Use!
+After setting everything up, ChatiFly should be fully functional! You can now:
+- Chat with AI-powered assistance  
+- Generate AI images using DALL-E  
+- Make real-time video calls  
+
+If you want to use **ChatiFly**,link coming soon..
+
+---
+
+## 🌐 Connect with Me
+Follow me for more awesome projects!  
+- **GitHub**: https://github.com/Harmit3
+- **Twitter**:https://x.com/1410HP
+- **LinkedIn**: https://www.linkedin.com/in/harmit-p-0720ab194/
+
+---
+
+## 📝 License
+This project is licensed under the [MIT License](LICENSE).
+
+---

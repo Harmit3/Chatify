@@ -1,81 +1,81 @@
-import { ConvexError,v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { api } from "./_generated/api";
 
-export const sendTextMessage =mutation({
-    args:{
-        sender:v.string(),
-        content:v.string(),
-        conversation:v.id("conversations"),
+export const sendTextMessage = mutation({
+    args: {
+        sender: v.string(),
+        content: v.string(),
+        conversation: v.id("conversations"),
 
     },
-    handler:async(ctx,args)=>{
-        const identity=await ctx.auth.getUserIdentity();
-        if(!identity){
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) {
             throw new ConvexError("Not authenticated!!");
         }
 
-        const user=await ctx.db
-          .query("users")
-          .withIndex("by_tokenIdentifier",(q)=>q.eq("tokenIdentifier",identity.tokenIdentifier))
-          .unique();
-        if(!user){
+        const user = await ctx.db
+            .query("users")
+            .withIndex("by_tokenIdentifier", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+            .unique();
+        if (!user) {
             throw new ConvexError("User not found");
         }
 
-        const conversation=await ctx.db
-         .query("conversations")
-         .filter(q=>q.eq(q.field("_id"),args.conversation))
-         .first();
+        const conversation = await ctx.db
+            .query("conversations")
+            .filter(q => q.eq(q.field("_id"), args.conversation))
+            .first();
 
 
-        if(!conversation){
+        if (!conversation) {
             throw new ConvexError("Conversation not found!!");
         }
 
-        if(!conversation.participants.includes(user._id)){
+        if (!conversation.participants.includes(user._id)) {
             throw new ConvexError("You are not part of this conversation");
         }
 
-        await ctx.db.insert("messages",{
-            sender:args.sender,
-            content:args.content,
-            conversation:args.conversation,
-            messageType:"text",
+        await ctx.db.insert("messages", {
+            sender: args.sender,
+            content: args.content,
+            conversation: args.conversation,
+            messageType: "text",
         });
 
         //OPENAI API's chat
-        if(args.content.startsWith("@gpt")){
+        if (args.content.startsWith("@gpt")) {
             //schedule the chatr action immdediatly
-            await ctx.scheduler.runAfter(0,api.openai.chat,{
-               messageBody:args.content,
-               conversation:args.conversation,
+            await ctx.scheduler.runAfter(0, api.openai.chat, {
+                messageBody: args.content,
+                conversation: args.conversation,
             });
         }
 
         //DALL-E chat
-        if(args.content.startsWith("@dall-e")){
+        if (args.content.startsWith("@dall-e")) {
             //schedule the chatr action immdediatly
-            await ctx.scheduler.runAfter(0,api.openai.dall_e,{
-               messageBody:args.content,
-               conversation:args.conversation,
+            await ctx.scheduler.runAfter(0, api.openai.dall_e, {
+                messageBody: args.content,
+                conversation: args.conversation,
             });
         }
     },
 });
 
-export const sendChatGPTMessage=mutation({
-    args:{
-        content:v.string(),
-        conversation:v.id("conversations"),
+export const sendChatGPTMessage = mutation({
+    args: {
+        content: v.string(),
+        conversation: v.id("conversations"),
         messageType: v.union(v.literal("text"), v.literal("image")),
     },
-    handler:async(ctx,args)=>{
-         await ctx.db.insert("messages",{
-            content:args.content,
-            sender:"ChatGPT",
-            messageType:args.messageType,
-            conversation:args.conversation,
+    handler: async (ctx, args) => {
+        await ctx.db.insert("messages", {
+            content: args.content,
+            sender: "ChatGPT",
+            messageType: args.messageType,
+            conversation: args.conversation,
         });
 
     },
@@ -98,7 +98,7 @@ export const sendChatGPTMessage=mutation({
 //         .collect();
 
 
-       {/*this is unoptimized since if any user sent 200 messages then it will run by 200 times while 
+{/*this is unoptimized since if any user sent 200 messages then it will run by 200 times while 
        we need only once so we need to use hashMap for that which has key and pair value concept*/}
 
 //         const messagesWithSender=await Promise.all(
@@ -110,7 +110,7 @@ export const sendChatGPTMessage=mutation({
 
 //                 return {...message,sender}
 //             })
-            
+
 //         )
 //         return messagesWithSender;
 //     }
@@ -122,88 +122,87 @@ export const sendChatGPTMessage=mutation({
 
 //optimized version with hashmap
 
-export const getMessages=query({
+export const getMessages = query({
+	args: {
+		conversation: v.id("conversations"),
+	},
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) {
+			throw new Error("Unauthorized");
+		}
 
-        args:{
-            conversation:v.id("conversations"),
-        },
-        handler:async(ctx,args)=>{
-            const identity=await ctx.auth.getUserIdentity();
-            if(!identity){
-                throw new ConvexError("Not Auuthenticated!!");
-            }
-    
-            const  messages=await ctx.db
-            .query("messages")
-            .withIndex('by_conversation',q=>q.eq("conversation",args.conversation))
-            .collect();
+		const messages = await ctx.db
+			.query("messages")
+			.withIndex("by_conversation", (q) => q.eq("conversation", args.conversation))
+			.collect();
 
-            const userProfileCache=new Map();
+		const userProfileCache = new Map();
 
-            const messagesWithSender=await Promise.all(
-                messages.map(async(message)=>{
-                    if(message.sender==="ChatGpt"){
-                        const image=message.messageType==="text"?"/gpt.png":"dall-e.png";
-                        return{...message,sender:{name:"ChatGPT",image},
-                    }
-                    }
-                    let sender;
-                    //check if sender is in cache profile
-                    if(userProfileCache.has(message.sender)){
-                        sender=userProfileCache.get(message.sender);
-                    }else{
-                        //fetch sender profile from  the database
-                        sender=await ctx.db
-                          .query("users")
-                          .filter((q)=>q.eq(q.field("_id"),message.sender))
-                          .first();
-                     //caChe the render profile
-                     userProfileCache.set(message.sender,sender);
-                    }
-                    return {...message,sender};
-                })
-            );
-         return messagesWithSender;
+		const messagesWithSender = await Promise.all(
+			messages.map(async (message) => {
+				if (message.sender === "ChatGPT") {
+					const image = message.messageType === "text" ? "/gpt.png" : "dall-e.png";
+					return { ...message, sender: { name: "ChatGPT", image } };
+				}
+				let sender;
+				// Check if sender profile is in cache
+				if (userProfileCache.has(message.sender)) {
+					sender = userProfileCache.get(message.sender);
+				} else {
+					// Fetch sender profile from the database
+					sender = await ctx.db
+						.query("users")
+						.filter((q) => q.eq(q.field("_id"), message.sender))
+						.first();
+					// Cache the sender profile
+					userProfileCache.set(message.sender, sender);
+				}
 
-        },
+				return { ...message, sender };
+			})
+		);
+
+		return messagesWithSender;
+	},
 });
 
-export const sendImage=mutation({
-    args:{imgId:v.id("_storage"),sender:v.id("users"),conversation:v.id("conversations")},
+export const sendImage = mutation({
+    args: { imgId: v.id("_storage"), sender: v.id("users"), conversation: v.id("conversations") },
 
-    handler:async(ctx,args)=>{
-    const identity=await ctx.auth.getUserIdentity();
-    if(!identity){
-        throw new ConvexError("Not Auuthenticated!!");
-    }
-    
-    const  content=(await ctx.storage.getUrl(args.imgId)) as string;
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) {
+            throw new ConvexError("Not Auuthenticated!!");
+        }
 
-    await ctx.db.insert("messages",{
-        content:content,
-        sender:args.sender,
-        messageType:"image",
-        conversation:args.conversation,
-    });
-  },
+        const content = (await ctx.storage.getUrl(args.imgId)) as string;
+
+        await ctx.db.insert("messages", {
+            content: content,
+            sender: args.sender,
+            messageType: "image",
+            conversation: args.conversation,
+        });
+    },
 });
 
 
 export const sendVideo = mutation({
-	args: { videoId: v.id("_storage"), sender: v.id("users"), conversation: v.id("conversations") },
-	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new ConvexError("Unauthorized");
-		}
+    args: { videoId: v.id("_storage"), sender: v.id("users"), conversation: v.id("conversations") },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) {
+            throw new ConvexError("Unauthorized");
+        }
 
-		const content = (await ctx.storage.getUrl(args.videoId)) as string;
+        const content = (await ctx.storage.getUrl(args.videoId)) as string;
 
-		await ctx.db.insert("messages", {
-			content: content,
-			sender: args.sender,
-			messageType: "video",
-			conversation: args.conversation,
-		});
-	},
+        await ctx.db.insert("messages", {
+            content: content,
+            sender: args.sender,
+            messageType: "video",
+            conversation: args.conversation,
+        });
+    },
 });
