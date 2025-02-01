@@ -12,6 +12,7 @@ const Conversation = ({ conversation }: { conversation: any }) => {
 	const lastMessage = conversation.lastMessage;
 	const lastMessageType = lastMessage?.messageType;
 	const me=useQuery(api.users.getMe);
+
 	const {setSelectedConversation,selectedConversation}=useConversationStore();
     const activeBgClass=selectedConversation?._id===conversation._id;
 	
@@ -42,11 +43,13 @@ const Conversation = ({ conversation }: { conversation: any }) => {
 						{lastMessage?.sender ===me?._id ? <MessageSeenSvg /> : ""}
 						{conversation.isGroup && <Users size={16} />}
 						{!lastMessage && "Say Hi!"}
-						{lastMessageType === "text" ? lastMessage?.content.length > 30 ? (
+						{lastMessageType === "text" ? (lastMessage?.content.length > 30 ? (
 							<span>{lastMessage?.content.slice(0, 30)}...</span>
-						) : (
+						     ) : (
 							<span>{lastMessage?.content}</span>
-						):null}
+						    )
+					     ):null
+					    }
 						{lastMessageType === "image" && <ImageIcon size={16} />}
 						{lastMessageType === "video" && <VideoIcon size={16} />}
 					</p>

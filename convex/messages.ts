@@ -1,9 +1,8 @@
 import { ConvexError,v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { scheduler } from "timers/promises";
 import { api } from "./_generated/api";
 
-export const sentTextMessage =mutation({
+export const sendTextMessage =mutation({
     args:{
         sender:v.string(),
         content:v.string(),
@@ -24,8 +23,10 @@ export const sentTextMessage =mutation({
             throw new ConvexError("User not found");
         }
 
-        const conversation=await ctx.db.query("conversations")
-         .filter(q=>q.eq(q.field("_id"),args.conversation)).first();
+        const conversation=await ctx.db
+         .query("conversations")
+         .filter(q=>q.eq(q.field("_id"),args.conversation))
+         .first();
 
 
         if(!conversation){
@@ -33,7 +34,7 @@ export const sentTextMessage =mutation({
         }
 
         if(!conversation.participants.includes(user._id)){
-            throw new ConvexError("User not in conversation");
+            throw new ConvexError("You are not part of this conversation");
         }
 
         await ctx.db.insert("messages",{
@@ -121,7 +122,7 @@ export const sendChatGPTMessage=mutation({
 
 //optimized version with hashmap
 
- export const getMessages=query({
+export const getMessages=query({
 
         args:{
             conversation:v.id("conversations"),
@@ -142,7 +143,7 @@ export const sendChatGPTMessage=mutation({
             const messagesWithSender=await Promise.all(
                 messages.map(async(message)=>{
                     if(message.sender==="ChatGpt"){
-                        const image=message.messageType==="text"?"/gpt.png":"dall-e.png"
+                        const image=message.messageType==="text"?"/gpt.png":"dall-e.png";
                         return{...message,sender:{name:"ChatGPT",image},
                     }
                     }

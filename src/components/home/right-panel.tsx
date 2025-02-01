@@ -38,7 +38,7 @@ const RightPanel = () => {
 
 					<div className='flex items-center gap-7 mr-5'>
 						<a href='/video-call' target='_blank'>
-							<Video size={23} />
+							<Video size={24} />
 						</a>
 						<X size={16} className='cursor-pointer'
 						 onClick={()=> setSelectedConversation(null)} />

@@ -1,5 +1,6 @@
 import {ConvexError,v} from  "convex/values";
 import { mutation, query } from "./_generated/server";
+import { useReducer } from "react";
 
 export const createConversation=mutation({
     args:{
@@ -79,7 +80,7 @@ export const getMyConversations=query({
                      .query("users")
                      .filter((q)=>q.eq(q.field("_id"),otherUserId))
                      .take(1)
-
+                    userDetails=userProfile[0];
                 }
 
 

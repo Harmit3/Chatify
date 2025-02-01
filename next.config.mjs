@@ -6,6 +6,7 @@ const nextConfig= {
   images:{
     remotePatterns:[
       {hostname:"confident-monitor-488.convex.cloud"},
+      {hostname:"oaidalleapiprodscus.blob.core.windows.net"}
    
     ]
   }

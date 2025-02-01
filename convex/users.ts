@@ -31,7 +31,7 @@ export const updateUser=internalMutation({
        .unique();
 
        if(!user){
-           throw new ConvexError("No user with this token found!!")
+           throw new ConvexError("No user with this id found!!")
        }
 
        await ctx.db.patch(user._id,{image:args.image,});

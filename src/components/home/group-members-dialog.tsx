@@ -26,7 +26,7 @@ const GroupMembersDialog = ({selectedConversation}:GroupMembersDialogProps) => {
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle className='my-2'>Current Members</DialogTitle>
-					<DialogDescription>
+					<DialogDescription  asChild>
 						<div className='flex flex-col gap-3 '>
 							{users?.map((user) => (
 								<div key={user._id} className={`flex gap-3 items-center p-2 rounded`}>

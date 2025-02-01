@@ -1,4 +1,4 @@
-"use client"; 
+"use client";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,88 +20,109 @@ import { api } from "../../../convex/_generated/api";
 import toast from "react-hot-toast";
 import { useConversationStore } from "@/store/chat-store";
 
+function getDisplayName(user: { name?: string; email: string }): string {
+	if (user.name && user.name !== "Guest users") {
+	  return user.name;
+	}
+	// Get the part before the "@" and remove trailing digits.
+	let emailPrefix = user.email.split("@")[0];
+	emailPrefix = emailPrefix.replace(/\d+$/, "");
+	// Capitalize the first letter
+	return emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
+  }
+
 const UserListDialog = () => {
 	const [selectedUsers, setSelectedUsers] = useState<Id<"users">[]>([]);
 	const [groupName, setGroupName] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [selectedImage, setSelectedImage] = useState<File | null>(null);
 	const [renderedImage, setRenderedImage] = useState("");
+
 	const imgRef = useRef<HTMLInputElement>(null);
-	const dialogCloseRef= useRef<HTMLInputElement>(null);
+	const dialogCloseRef = useRef<HTMLButtonElement>(null);
 
-	const createConversation=useMutation(api.conversations.createConversation);
-	const generateUploadUrl=useMutation(api.conversations.generateUploadUrl)
-	const me=useQuery(api.users.getMe);
-	const users=useQuery(api.users.getUsers);
+	const createConversation = useMutation(api.conversations.createConversation);
+	const generateUploadUrl = useMutation(api.conversations.generateUploadUrl)
+	const me = useQuery(api.users.getMe);
+	const users = useQuery(api.users.getUsers);
 
-	const {setSelectedConversation}=useConversationStore(); 
+	const { setSelectedConversation } = useConversationStore();
 
 
-	const handleCreateConversation=async()=>{
-		if(selectedUsers.length===0) return;
+	const handleCreateConversation = async () => {
+		if (selectedUsers.length === 0) return;
 		setIsLoading(true);
-		try{
-           const isGroup=selectedUsers.length>1;
-		   let conversationId;
+		try {
+			const isGroup = selectedUsers.length > 1;
+			let conversationId;
 
-		   if(!isGroup){
-              conversationId=await  createConversation({
-				participants:[...selectedUsers,me?._id!],
-				isGroup:false,
-		   })
-		}else{
-			const postUrl=await generateUploadUrl();
-			const result=await fetch(postUrl,{
-				method:"POST",
-				headers:{"Content-Type":selectedImage?.type!},
-				body:selectedImage,
-			});
+			if (!isGroup) {
+				conversationId = await createConversation({
+					participants: [...selectedUsers, me?._id!],
+					isGroup: false,
+				})
+			} else {
+				if (!selectedImage) {
+					toast.error("Please select an image for the group.");
+					return;
+				}
 
-			const{storageId}=await result.json();
-                
-			conversationId=await createConversation({
-				participants:[...selectedUsers, me?._id!],
-				isGroup:true,
-				admin:me?._id!,
-				groupName,
-				groupImage:storageId,
+				const postUrl = await generateUploadUrl();
+				const result = await fetch(postUrl, {
+					method: "POST",
+					headers: { "Content-Type": selectedImage?.type! },
+					body: selectedImage,
+				});
 
-			});
- 
-		   }
-		   dialogCloseRef.current?.click();
-		   setSelectedUsers([]);
-		   setGroupName("");
-		   setSelectedImage(null);
+				const { storageId } = await result.json();
 
-		   //need to use the conversation id and update a global state
-		   const conversationName=isGroup?groupName:users?.find((user)=>user._id===selectedUsers[0])?.name;
+				conversationId = await createConversation({
+					participants: [...selectedUsers, me?._id!],
+					isGroup: true,
+					admin: me?._id!,
+					groupName,
+					groupImage: storageId,
 
-		   setSelectedConversation({
-			_id:conversationId,
-			participants:selectedUsers,
-			isGroup,
-			image:isGroup?renderedImage:users?.find((user)=>user._id===selectedUsers[0])?.image,
-			name:conversationName,
-			admin:me?._id!,
-		   })
+				});
 
-			}catch(err){
-           toast.error("Failed to create conversation");
-		   console.error(err);
+			}
+			dialogCloseRef.current?.click();
+			setSelectedUsers([]);
+			setGroupName("");
+			setSelectedImage(null);
+
+			//need to use the conversation id and update a global state
+			const conversationName = isGroup ? groupName : users?.find((user) => user._id === selectedUsers[0])?.name;
+
+			setSelectedConversation({
+				_id: conversationId,
+				participants: selectedUsers,
+				isGroup,
+				image: isGroup ? renderedImage : users?.find((user) => user._id === selectedUsers[0])?.image,
+				name: conversationName,
+				admin: me?._id!,
+			})
+
+		} catch (err) {
+			toast.error("Failed to create conversation");
+			console.error(err);
 		}
-		finally{
+		finally {
 			setIsLoading(false);
 		}
 	};
 
-	useEffect(()=>{
-		if(!selectedImage)return setRenderedImage('');
-		const reader=new FileReader();
-			reader.onload=(e)=>setRenderedImage(e.target?.result as string);
-			reader.readAsDataURL(selectedImage);
-		
-	},[selectedImage]);
+	useEffect(() => {
+		if (!selectedImage) return setRenderedImage('');
+		const reader = new FileReader();
+		reader.onload = (e) => setRenderedImage(e.target?.result as string);
+		reader.readAsDataURL(selectedImage);
+
+		return () => {
+			setRenderedImage("");  // Clear rendered image when selectedImage changes or component unmounts
+		};
+
+	}, [selectedImage]);
 
 	return (
 		<Dialog>
@@ -109,25 +130,28 @@ const UserListDialog = () => {
 				<MessageSquareDiff size={20} />
 			</DialogTrigger>
 			<DialogContent>
-				<DialogHeader> 
-					<DialogClose/>  {/*or may be use <DialogClose ref={dialogCloseRef} /> */}
+				<DialogHeader>
+					<DialogClose />  {/*or may be use <DialogClose ref={dialogCloseRef} /> */}
 					<DialogTitle>USERS</DialogTitle>
 				</DialogHeader>
 
-				<DialogDescription>Start a new chat</DialogDescription>
+				<DialogDescription asChild>
+					<div>Start a new chat</div>
+				</DialogDescription>
+
 				{renderedImage && (
 					<div className='w-16 h-16 relative mx-auto'>
 						<Image src={renderedImage} fill alt='user image' className='rounded-full object-cover' />
 					</div>
 				)}
 
-                <input  
-				  type="file"
-				  accept="image/*"
-				  ref={imgRef}
-				  hidden
-				  onChange={(e)=>setSelectedImage(e.target.files![0])}
-				  />
+				<input
+					type="file"
+					accept="image/*"
+					ref={imgRef}
+					hidden
+					onChange={(e) => setSelectedImage(e.target.files![0])}
+				/>
 				{selectedUsers.length > 1 && (
 					<>
 						<Input
@@ -135,7 +159,7 @@ const UserListDialog = () => {
 							value={groupName}
 							onChange={(e) => setGroupName(e.target.value)}
 						/>
-						<Button className='flex gap-2' onClick={() =>imgRef.current?.click()}>
+						<Button className='flex gap-2' onClick={() => imgRef.current?.click()}>
 							<ImageIcon size={20} />
 							Group Image
 						</Button>
@@ -143,7 +167,6 @@ const UserListDialog = () => {
 				)}
 				<div className='flex flex-col gap-3 overflow-auto max-h-60'>
 					{users?.map((user) => (
-						<>
 						<div
 							key={user._id}
 							className={`flex gap-3 items-center p-2 rounded cursor-pointer active:scale-95 
@@ -170,17 +193,17 @@ const UserListDialog = () => {
 
 							<div className='w-full '>
 								<div className='flex items-center justify-between'>
-									<p className='text-md font-medium'>{user.name || user.email.split("@")[0]}</p>
+									<p className='text-md font-medium'> {getDisplayName(user)}</p>
 								</div>
 							</div>
 						</div>
-						</>
+
 					))}
 				</div>
 				<div className='flex justify-between'>
 					<Button variant={"outline"}>Cancel</Button>
 					<Button
-					    onClick={handleCreateConversation}
+						onClick={handleCreateConversation}
 						disabled={selectedUsers.length === 0 || (selectedUsers.length > 1 && !groupName) || isLoading}
 					>
 						{/* spinner */}

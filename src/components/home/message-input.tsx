@@ -1,4 +1,4 @@
-'use client';
+
 import { Laugh, Mic, Plus, Send } from "lucide-react";
 import { Input } from "../ui/input";
 import { useState } from "react";
@@ -13,10 +13,12 @@ import MediaDropdown from "./media-dropdown";
 
 const MessageInput = () => {
 	const [msgText, setMsgText] = useState("");
-	const sendTextMsg=useMutation(api.messages.sentTextMessage)
-	const me=useQuery(api.users.getMe);
 	const {selectedConversation}=useConversationStore();
 	const {ref,isComponentVisible,setIsComponentVisible}=useComponentVisible(false);
+
+	const me=useQuery(api.users.getMe);
+	const sendTextMsg=useMutation(api.messages.sendTextMessage);
+	
 
 	const handleSendTextMsg=async (e:React.FormEvent)=>{
        e.preventDefault();
@@ -24,7 +26,7 @@ const MessageInput = () => {
 		await sendTextMsg({content:msgText,conversation:selectedConversation!._id,sender:me!._id})
         setMsgText(" ");
 	   }catch(err:any){
-           toast.error("err.message");
+           toast.error(err.message);
 		   console.error(err);
 	   }
 	}
@@ -38,7 +40,7 @@ const MessageInput = () => {
 						<EmojiPicker
 						theme={Theme.DARK}
 						onEmojiClick={(emojiObject)=>{
-							setMsgText(prev=>prev+emojiObject.emoji);
+							setMsgText((prev)=>prev+emojiObject.emoji);
 						}}
 						style={{position:"absolute",bottom:"1.5rem",left:"1rem",zIndex:50}}
 						/>
